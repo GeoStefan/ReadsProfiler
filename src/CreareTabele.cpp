@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     int rc;
     char *sql;
 
-    rc = sqlite3_open("Librarie.db", &db);
+    rc = sqlite3_open("../Librarie.db", &db);
 
     if( rc ) 
     {

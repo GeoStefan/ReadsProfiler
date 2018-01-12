@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     char *raspuns = new char[3000], *raspuns_partial = new char[3000];
     char tip, tip_raspuns;
     long lungime, lungime_raspuns;
+    bool logat = false;
     while(!exit)
     {
         printf("\n  Introduceti numele comenzii.\n");
@@ -77,7 +78,12 @@ int main(int argc, char *argv[])
             printf("%s\n",COM_N);
             continue;
         }
-
+        if(tip != 'l' && !logat && tip != 't')
+        {
+            printf("    Trebuie sa te loghezi mai intai.\n");
+            continue;
+        }
+        
         switch(tip)
         {
             case 'l':
@@ -171,7 +177,12 @@ int main(int argc, char *argv[])
                 return errno;
             }
         
-        printf("%ld%c%s",lungime_raspuns,tip_raspuns,raspuns);
+        printf("%s",raspuns);
+
+        if(tip == 'l' && tip_raspuns == 'o')
+            logat = true;
+        if(tip == 'x' && tip_raspuns == 'o')
+            logat = false;
 
         if(tip == 'd' && tip_raspuns == 'o')
         {
