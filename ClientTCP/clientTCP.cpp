@@ -204,7 +204,11 @@ int main(int argc, char *argv[])
 
             while(citit_nou > 0)
             {
-                read(sd,&citit_nou,sizeof(long long));
+                if(read(sd,&citit_nou,sizeof(long long)) < 0)
+                {
+                    perror ("Eroare la citire din socket.\n");
+                    return errno;
+                }
                 if(citit_nou > 0)
                 {
                     read(sd,bufer,citit_nou);
@@ -241,6 +245,8 @@ int main(int argc, char *argv[])
             }
             if(write(sd,&citit_nou,sizeof(long long)) >=0)
                 printf("    S-a trimis cartea la server cu succes.\n");
+            else
+                printf("Eroare la trimiterea cartii.\n");
             close(fd);
         }
 	

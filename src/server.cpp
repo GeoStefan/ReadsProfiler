@@ -14,7 +14,7 @@
 #include "../include/BazaDate.h"
 #include "../include/TranzactieOnline.h"
 
-#define PORT 2909
+#define PORT 2100
 #define LIMITA 4
 
 extern sqlite3* db;
@@ -24,18 +24,19 @@ extern int errno;
 static void *treat(void *);
 
 typedef struct {
-	pthread_t idThread; //id-ul thread-ului
-	int thCount; //nr de conexiuni servite
+	pthread_t idThread; 
+	int thCount; 
 }Thread;
 
-Thread *threadsPool; //un array de structuri Thread
+Thread *threadsPool; 
 
-int sd; //descriptorul de socket de ascultare
-int nthreads;//numarul de threaduri
+int sd; 
+int nthreads;
 int activeThreads = 0;
+int preThreads, createdThreads;
 pthread_mutex_t mlock=PTHREAD_MUTEX_INITIALIZER;              
 
-void raspunde(int cl,int idThread);
+void protocol(int cl,int idThread);
 
 int main (int argc, char *argv[])
 {
@@ -48,12 +49,13 @@ int main (int argc, char *argv[])
         exit(1);
     }
     nthreads=atoi(argv[1]);
+    preThreads = nthreads;
     if(nthreads <=0)
         {
             fprintf(stderr,"Eroare: Numar de fire invalid...");
         exit(1);
         }
-        threadsPool = new Thread[nthreads*10];
+        threadsPool = new Thread[nthreads*100];
 
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
         {
@@ -66,9 +68,9 @@ int main (int argc, char *argv[])
     
     bzero (&server, sizeof (server));
 
-        server.sin_family = AF_INET;	
-        server.sin_addr.s_addr = htonl (INADDR_ANY);
-        server.sin_port = htons (PORT);
+    server.sin_family = AF_INET;	
+    server.sin_addr.s_addr = htonl (INADDR_ANY);
+    server.sin_port = htons (PORT);
     
     if (bind (sd, (struct sockaddr *) &server, sizeof (struct sockaddr)) == -1)
         {
@@ -88,30 +90,26 @@ int main (int argc, char *argv[])
 
     for(int i=0; i<nthreads;i++)
             threadCreate(i);
-
-        
-    /* servim in mod concurent clientii...folosind thread-uri */
+    createdThreads = nthreads-1;
     while(1)
         {
             if(activeThreads == nthreads)
             {
-                printf("Se creeaza noi threaduri");
-                for(int i=nthreads; i<nthreads*2;i++)
-                    threadCreate(i);
-                nthreads *= 2;
-            }
-            //printf ("[server]Asteptam la portul %d...\n",PORT);
-            //pause();				
+                printf("Se creeaza un nou thread.\n");
+                nthreads++;
+                createdThreads++;
+                threadCreate(createdThreads);
+            }				
         }
     BazaDate::inchidereBD();  
 };	
 
-void threadCreate(int i)
+void threadCreate(int nri)
 {
 	void *treat(void *);
 	
-	pthread_create(&threadsPool[i].idThread,NULL,&treat,(void*)i);
-	return; /* threadul principal returneaza */
+	pthread_create(&threadsPool[nri].idThread,NULL,&treat,(void*)nri);
+	return;
 }
 
 void *treat(void * arg)
@@ -140,12 +138,11 @@ void *treat(void * arg)
             activeThreads++;
 			threadsPool[(int)argi].thCount++;
 
-			raspunde(client,(int)argi); //procesarea cererii
-			/* am terminat cu acest client, inchidem conexiunea */
+			protocol(client,(int)argi); 
 			close (client);
-            sleep(5);
+            //sleep(5);
             activeThreads--;
-            if(activeThreads < nthreads/2 && nthreads > LIMITA)
+            if(argi >= preThreads)
             {
                 nthreads--;
                 break;
@@ -155,7 +152,7 @@ void *treat(void * arg)
 };
 
 
-void raspunde(int cl,int idThread)
+void protocol(int cl,int idThread)
 {
     char *mesaj = new char[1024];
     char *raspuns = new char[3000], *mesaj_partial = new char[3000];
@@ -334,8 +331,10 @@ void raspunde(int cl,int idThread)
                 }
                 bzero(bufer,sizeof(bufer));
             }
-
-            printf("Am primit fisierul: %s\n",fisier); 
+            if(citit_nou < 0)
+                printf("Eroare la adaugarea fisierului.\n");
+            else
+                printf("Am primit fisierul: %s\n",fisier); 
             close(fd);
         }
 

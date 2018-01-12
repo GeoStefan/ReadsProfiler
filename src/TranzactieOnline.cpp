@@ -35,6 +35,7 @@ bool TranzactieOnline::Login(char mesaj[1024], char raspuns[3000], char user[20]
         strcpy(raspuns,"    Te-ai logat cu succes.\n");
         strcpy(user,nume);
         tip_user = c->getUserType(user);
+        printf("User:%s Usertype:%d\n",user,tip_user);
         return true;
     }
     else
@@ -249,7 +250,10 @@ bool TranzactieOnline::StergeCarte(char mesaj[1024], char raspuns[3000])
     Carte *c = new Carte();
     if(c->stergeCarte(mesaj,fisier))
     {
-        if(remove(fisier) != 0)
+        char locatie[100];
+        strcpy(locatie,"Carti/");
+        strcat(locatie,fisier);
+        if(remove(locatie) != 0)
         {
             strcpy(raspuns,"    A aparut o eroare la stergerea fisierului ");
             strcat(raspuns,fisier);

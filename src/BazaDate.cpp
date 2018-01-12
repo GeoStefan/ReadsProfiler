@@ -485,7 +485,7 @@ int BazaDate::selectClientType(char *sql)
         return false;
     }*/
     sqlite3_finalize(stmt);
-    return true;
+    return tip;
 }
 
 bool BazaDate:: selectFisCarte(char *sql, char rezultat[30])
